@@ -32,11 +32,6 @@
     "asyncstorage",
     "storage"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/react-native-async-storage/async-storage.git",
-    "directory": "packages/default-storage-backend"
-  },
   "scripts": {
     "prepare": "bob build",
     "start": "react-native start",
