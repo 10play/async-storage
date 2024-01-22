@@ -19,6 +19,7 @@ static NSString *const RCTOldStorageDirectory = @"RNCAsyncLocalStorage_V1";
 static NSString *const RCTExpoStorageDirectory = @"RCTAsyncLocalStorage";
 static NSString *const RCTManifestFileName = @"manifest.json";
 static const NSUInteger RCTInlineValueThreshold = 1024;
+NSString *AppGroupName;
 
 #pragma mark - Static helper functions
 
@@ -134,6 +135,15 @@ static NSString *RCTCreateStorageDirectoryPath(NSString *storageDir)
     storageDirectoryPath =
         NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject;
 #else
+    if(AppGroupName){
+        // If app group is set use app group directory
+         NSLog(@"AppGroupName %@", AppGroupName);
+         NSURL * pathUrl = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier: AppGroupName];
+         storageDirectoryPath =  pathUrl.path;
+         storageDirectoryPath = [storageDirectoryPath stringByAppendingPathComponent:storageDir];
+         NSLog(@"storageDirectoryPath: %@ appGroupname: %@", storageDirectoryPath, AppGroupName);
+         return storageDirectoryPath;
+    }
     storageDirectoryPath =
         NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES)
             .firstObject;
@@ -429,6 +439,35 @@ RCTStorageDirectoryMigrationCheck(NSString *fromStorageDirectory,
         return nil;
     }
 
+    // Get the path to any old storage directory that needs to be migrated. If multiple exist,
+    // the oldest are removed and the most recently modified is returned.
+    NSString *oldStoragePath = RCTGetStoragePathForMigration();
+    if (oldStoragePath != nil) {
+        // Migrate our deprecated path "Documents/.../RNCAsyncLocalStorage_V1" or
+        // "Documents/.../RCTAsyncLocalStorage" to "Documents/.../RCTAsyncLocalStorage_V1"
+        RCTStorageDirectoryMigrationCheck(
+            oldStoragePath, RCTCreateStorageDirectoryPath_deprecated(RCTStorageDirectory), YES);
+    }
+
+    // Migrate what's in "Documents/.../RCTAsyncLocalStorage_V1" to
+    // "Application Support/[bundleID]/RCTAsyncLocalStorage_V1"
+    RCTStorageDirectoryMigrationCheck(RCTCreateStorageDirectoryPath_deprecated(RCTStorageDirectory),
+                                      RCTCreateStorageDirectoryPath(RCTStorageDirectory),
+                                      NO);
+
+    return self;
+}
+
+- (instancetype)initWithGroup:(NSString *)group {
+
+    if (!self) {
+      self = [super init];
+    } else {
+        if (group) {
+            AppGroupName = group;
+        }
+    }
+    
     // Get the path to any old storage directory that needs to be migrated. If multiple exist,
     // the oldest are removed and the most recently modified is returned.
     NSString *oldStoragePath = RCTGetStoragePathForMigration();
