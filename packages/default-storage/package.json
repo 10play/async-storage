@@ -32,6 +32,11 @@
     "asyncstorage",
     "storage"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/10play/async-storage.git",
+    "directory": "packages/default-storage"
+  },
   "scripts": {
     "prepare": "bob build",
     "start": "react-native start",
